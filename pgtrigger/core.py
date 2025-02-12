@@ -510,8 +510,13 @@ class Func:
     possible to do inline SQL in the `Meta` of a model and reference its properties.
     """
 
-    def __init__(self, func):
+    def __init__(self, func, render_fn=None):
+        """
+        render_fn is a function that formats func and model._meta together and produces the final SQL
+
+        """
         self.func = func
+        self.render_fn = render_fn
 
     def render(self, model: models.Model) -> str:
         """
@@ -525,7 +530,7 @@ class Func:
         """
         fields = utils.AttrDict({field.name: field for field in model._meta.fields})
         columns = utils.AttrDict({field.name: field.column for field in model._meta.fields})
-        return self.func.format(meta=model._meta, fields=fields, columns=columns)
+        return self.render_fn(self.func, model._meta) if self.render_fn is not None else self.func.format(meta=model._meta, fields=fields, columns=columns)
 
 
 # Allows Trigger methods to be used as context managers, mostly for
